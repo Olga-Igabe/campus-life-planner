@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Validator Tests — Campus Life Planner</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 0; padding: 1.5rem; color: #1e293b; background: #f8fafc; }
+    h1 { margin-top: 0; }
+    #summary { font-weight: 700; font-size: 1.125rem; }
+    .pass { color: #166534; }
+    .fail { color: #b91c1c; font-weight: 700; }
+    li { margin-bottom: 0.25rem; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Validator tests</h1>
+    <p id="summary" role="status"></p>
+    <ol id="results"></ol>
+  </main>
+
+  <script type="module">
+    import {
+      validateTitle,
+      validateDuration,
+      validateDate,
+      validateTag,
+      validateCap,
+      findDuplicateWord
+    } from '../scripts/validators.js';
+
+    const results = document.getElementById('results');
+    let passed = 0;
+    let failed = 0;
+
+    function check(name, actual, expected) {
+      const ok = actual === expected;
+      if (ok) {
+        passed += 1;
+      } else {
+        failed += 1;
+      }
+      const item = document.createElement('li');
+      item.className = ok ? 'pass' : 'fail';
+      item.textContent = ok
+        ? `PASS: ${name}`
+        : `FAIL: ${name} (expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)})`;
+      results.append(item);
+    }
+
+    const isValid = (validate, value) => validate(value) === '';
+
+    check('title "Gym session" is valid', isValid(validateTitle, 'Gym session'), true);
+    check('title "A" (one character) is valid', isValid(validateTitle, 'A'), true);
+    check('title with leading space is invalid', isValid(validateTitle, ' Gym'), false);
+    check('title with trailing space is invalid', isValid(validateTitle, 'Gym '), false);
+    check('title with double space is invalid', isValid(validateTitle, 'Gym  session'), false);
+    check('title with repeated word is invalid', isValid(validateTitle, 'Read the the notes'), false);
+    check('repeated word is caught across cases', isValid(validateTitle, 'The the plan'), false);
+    check('empty title is invalid', isValid(validateTitle, ''), false);
+
+    check('duration "90" is valid', isValid(validateDuration, '90'), true);
+    check('duration "1" is valid', isValid(validateDuration, '1'), true);
+    check('duration "0" is invalid', isValid(validateDuration, '0'), false);
+    check('duration "090" is invalid', isValid(validateDuration, '090'), false);
+    check('duration "45.5" is invalid', isValid(validateDuration, '45.5'), false);
+    check('duration "-5" is invalid', isValid(validateDuration, '-5'), false);
+    check('duration "abc" is invalid', isValid(validateDuration, 'abc'), false);
+    check('empty duration is invalid', isValid(validateDuration, ''), false);
+
+    check('date "2026-10-14" is valid', isValid(validateDate, '2026-10-14'), true);
+    check('leap day "2028-02-29" is valid', isValid(validateDate, '2028-02-29'), true);
+    check('date "2026-02-29" (not a leap year) is invalid', isValid(validateDate, '2026-02-29'), false);
+    check('date "2026-02-30" is invalid', isValid(validateDate, '2026-02-30'), false);
+    check('date "2026-13-01" is invalid', isValid(validateDate, '2026-13-01'), false);
+    check('date "14/10/2026" is invalid', isValid(validateDate, '14/10/2026'), false);
+    check('date "2026-1-5" is invalid', isValid(validateDate, '2026-1-5'), false);
+
+    check('tag "Study" is valid', isValid(validateTag, 'Study'), true);
+    check('tag "Club-Meeting" is valid', isValid(validateTag, 'Club-Meeting'), true);
+    check('tag "Self Study" is valid', isValid(validateTag, 'Self Study'), true);
+    check('tag "Study!" is invalid', isValid(validateTag, 'Study!'), false);
+    check('tag "-Club" is invalid', isValid(validateTag, '-Club'), false);
+    check('tag "Club  Meeting" is invalid', isValid(validateTag, 'Club  Meeting'), false);
+    check('tag "Study2" is invalid', isValid(validateTag, 'Study2'), false);
+
+    check('cap "20" is valid', isValid(validateCap, '20'), true);
+    check('cap "0" is invalid', isValid(validateCap, '0'), false);
+    check('cap "2.5" is invalid', isValid(validateCap, '2.5'), false);
+
+    check('back-reference finds "the" in "Read the the notes"', findDuplicateWord('Read the the notes'), 'the');
+    check('back-reference finds nothing in "Read the notes"', findDuplicateWord('Read the notes'), null);
+    check('back-reference ignores "the theory"', findDuplicateWord('the theory'), null);
+    check('back-reference finds "Study" in "Study study group"', findDuplicateWord('Study study group'), 'Study');
+
+    document.getElementById('summary').textContent =
+      `${passed} passed, ${failed} failed (${passed + failed} tests)`;
+  </script>
+</body>
+</html>
