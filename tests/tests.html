@@ -32,6 +32,7 @@
     } from '../scripts/validators.js';
     import { buildSearch, taskMatches, splitMatches } from '../scripts/search.js';
     import { setTasks, getTasks, addTask, updateTask, deleteTask, sortTasks } from '../scripts/state.js';
+    import { totalMinutes, topTag, lastSevenDays, weekRange, capStatus, formatHours } from '../scripts/stats.js';
 
     const results = document.getElementById('results');
     let currentList = null;
@@ -152,6 +153,36 @@
     check('duration descending puts the longest first', sortTasks(list, 'duration-desc')[0].duration, 120);
     check('duration ascending puts the shortest first', sortTasks(list, 'duration-asc')[0].duration, 30);
     check('sorting does not change the original list', list[0].id, 'task_0001');
+
+    group('Dashboard stats and weekly cap');
+    const wednesday = new Date(2026, 9, 14);
+    const week = [
+      { id: 'task_0001', title: 'Lecture', dueDate: '2026-10-12', duration: 90, tag: 'Class' },
+      { id: 'task_0002', title: 'Essay', dueDate: '2026-10-14', duration: 120, tag: 'Assignment' },
+      { id: 'task_0003', title: 'Seminar', dueDate: '2026-10-18', duration: 60, tag: 'Class' },
+      { id: 'task_0004', title: 'Old quiz', dueDate: '2026-10-08', duration: 30, tag: 'Study' },
+      { id: 'task_0005', title: 'Next week', dueDate: '2026-10-19', duration: 45, tag: 'Study' }
+    ];
+    check('total minutes adds every task', totalMinutes(week), 345);
+    check('total minutes of an empty list is 0', totalMinutes([]), 0);
+    check('top tag is the most frequent tag', topTag(week).tag, 'Class');
+    check('top tag of an empty list is null', topTag([]), null);
+    check('tie on count picks the tag that comes first alphabetically', topTag([week[1], week[3]]).tag, 'Assignment');
+    check('week starts on Monday', weekRange(wednesday).start, '2026-10-12');
+    check('week ends on Sunday', weekRange(wednesday).end, '2026-10-18');
+    check('Sunday belongs to the week that started on Monday', weekRange(new Date(2026, 9, 18)).start, '2026-10-12');
+    const days = lastSevenDays(week, wednesday);
+    check('chart has 7 days', days.length, 7);
+    check('chart starts 6 days before today', days[0].date, '2026-10-08');
+    check('chart ends today', days[6].date, '2026-10-14');
+    check('chart day sums its tasks', days[6].minutes, 120);
+    check('cap counts only tasks due this week', capStatus(week, 20, wednesday).usedMinutes, 270);
+    check('under the cap is not over', capStatus(week, 20, wednesday).over, false);
+    check('4 h cap is exceeded by 270 minutes', capStatus(week, 4, wednesday).over, true);
+    check('exactly at the cap is not over', capStatus(week, 4.5, wednesday).over, false);
+    check('remaining minutes go negative when over', capStatus(week, 4, wednesday).remainingMinutes, -30);
+    check('90 minutes formats as 1.5 h', formatHours(90), '1.5 h');
+    check('20 minutes rounds to 0.33 h', formatHours(20), '0.33 h');
 
     document.getElementById('summary').textContent =
       `${passed} passed, ${failed} failed (${passed + failed} tests)`;

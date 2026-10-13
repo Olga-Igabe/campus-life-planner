@@ -1,4 +1,8 @@
+export const DEFAULT_TAGS = ['Class', 'Assignment', 'Groupwork', 'Study', 'Meeting', 'Sports', 'Entertainment'];
+export const DEFAULT_SETTINGS = { unit: 'minutes', weeklyCapHours: 20, tags: DEFAULT_TAGS };
+
 let tasks = [];
+let settings = { ...DEFAULT_SETTINGS, tags: [...DEFAULT_TAGS] };
 let lastNumber = 0;
 const listeners = new Set();
 
@@ -24,6 +28,17 @@ export function subscribe(listener) {
 
 export function getTasks() {
   return tasks.map((task) => ({ ...task }));
+}
+
+export function getSettings() {
+  return { ...settings, tags: [...settings.tags] };
+}
+
+export function updateSettings(changes) {
+  settings = { ...settings, ...changes };
+  if (changes.tags) settings.tags = [...changes.tags];
+  notify();
+  return getSettings();
 }
 
 export function getTask(id) {

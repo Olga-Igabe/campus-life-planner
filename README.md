@@ -3,7 +3,7 @@
 Individual ALU assignment: a vanilla HTML/CSS/JS planner for campus tasks and events.
 
 **Theme:** Campus Life Planner
-**Status:** M4 — Render, Sort & Regex Search
+**Status:** M5 — Stats & Weekly Cap
 
 See [docs/spec.md](docs/spec.md) for the data model, regex rules, wireframes and accessibility plan.
 
@@ -15,4 +15,4 @@ In VS Code, install the Live Server extension and click **Go Live**.
 
 ## Tests
 Open `tests/tests.html` through the local server (or on the live site at `/tests/tests.html`).
-It checks the validators, the regex search, highlighting, task state and sorting, and shows a pass/fail summary.
+It checks the validators, the regex search, highlighting, task state, sorting and dashboard statistics, and shows a pass/fail summary.

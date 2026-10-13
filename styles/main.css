@@ -208,12 +208,56 @@ main:focus {
 
 .chart {
   display: flex;
-  align-items: flex-end;
   gap: 0.5rem;
-  height: 140px;
+  height: 170px;
   margin-top: 0.5rem;
-  padding: 0.5rem;
+}
+
+.chart-col {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.chart-value {
+  min-height: 1.25rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.chart-track {
+  position: relative;
+  flex: 1 1 auto;
+  width: 100%;
   border-bottom: 2px solid var(--border);
+}
+
+.chart-bar {
+  position: absolute;
+  right: 15%;
+  bottom: 0;
+  left: 15%;
+  height: 0;
+  background: var(--primary);
+  border-radius: 4px 4px 0 0;
+  transition: height 0.4s ease;
+}
+
+.chart-label {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.stat--over {
+  background: var(--danger-bg);
+}
+
+.stat--over .stat-value {
+  color: var(--danger);
 }
 
 .cap-message {

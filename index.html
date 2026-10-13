@@ -44,12 +44,12 @@
             <p class="stat-value" id="stat-top-tag">None yet</p>
           </article>
           <article class="stat">
-            <h3 class="stat-label">Weekly cap</h3>
-            <p class="stat-value" id="stat-cap">20 h</p>
+            <h3 class="stat-label">This week vs cap</h3>
+            <p class="stat-value" id="stat-cap">0 h of 20 h</p>
           </article>
         </div>
         <figure class="trend">
-          <figcaption>Planned minutes, last 7 days</figcaption>
+          <figcaption>Minutes of tasks due each day, last 7 days</figcaption>
           <div id="trend-chart" class="chart" role="img" aria-label="No tasks in the last 7 days"></div>
         </figure>
       </div>
@@ -166,9 +166,9 @@
           </fieldset>
           <div class="field">
             <label for="cap-input">Weekly cap (hours)</label>
-            <input id="cap-input" type="text" inputmode="numeric" autocomplete="off" aria-describedby="cap-hint cap-error">
+            <input id="cap-input" type="text" inputmode="numeric" autocomplete="off" aria-describedby="cap-hint cap-input-error">
             <p id="cap-hint" class="hint">Whole hours, at least 1. Counts tasks due from Monday to Sunday.</p>
-            <p id="cap-error" class="error"></p>
+            <p id="cap-input-error" class="error"></p>
           </div>
           <button type="submit" class="btn btn--primary">Save settings</button>
         </form>

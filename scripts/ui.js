@@ -1,4 +1,5 @@
 import { splitMatches, regexForField } from './search.js';
+import { formatHours } from './stats.js';
 
 export function setFieldError(input, message) {
   const error = document.getElementById(`${input.id}-error`);
@@ -151,4 +152,49 @@ export function renderTasks(tbody, tasks, { search, unit, editingId, draft }) {
     return row;
   });
   tbody.replaceChildren(...rows);
+}
+
+export function renderStats({ total, minutes, top, cap }, unit) {
+  document.getElementById('stat-total').textContent = String(total);
+  document.getElementById('stat-time').textContent = formatDuration(minutes, unit);
+  document.getElementById('stat-top-tag').textContent = top ? `${top.tag} (${top.count})` : 'None yet';
+
+  const capValue = document.getElementById('stat-cap');
+  capValue.textContent = `${formatHours(cap.usedMinutes)} of ${formatHours(cap.capMinutes)}`;
+  capValue.closest('.stat').classList.toggle('stat--over', cap.over);
+}
+
+export function renderChart(container, days) {
+  if (container.children.length !== days.length) {
+    const columns = days.map(() => {
+      const column = document.createElement('div');
+      column.className = 'chart-col';
+      column.setAttribute('aria-hidden', 'true');
+
+      const value = document.createElement('span');
+      value.className = 'chart-value';
+      const track = document.createElement('div');
+      track.className = 'chart-track';
+      const bar = document.createElement('div');
+      bar.className = 'chart-bar';
+      const label = document.createElement('span');
+      label.className = 'chart-label';
+
+      track.append(bar);
+      column.append(value, track, label);
+      return column;
+    });
+    container.replaceChildren(...columns);
+  }
+
+  const max = Math.max(0, ...days.map((day) => day.minutes));
+  days.forEach((day, index) => {
+    const column = container.children[index];
+    column.querySelector('.chart-value').textContent = day.minutes > 0 ? String(day.minutes) : '';
+    column.querySelector('.chart-bar').style.height = max > 0 ? `${(day.minutes / max) * 100}%` : '0%';
+    column.querySelector('.chart-label').textContent = day.label;
+  });
+
+  const summary = days.map((day) => `${day.longLabel}: ${day.minutes} minutes`).join('; ');
+  container.setAttribute('aria-label', `Planned minutes for tasks due in the last 7 days. ${summary}.`);
 }

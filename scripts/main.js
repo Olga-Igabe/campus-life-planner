@@ -1,4 +1,4 @@
-import { FIELD_VALIDATORS } from './validators.js';
+import { FIELD_VALIDATORS, validateCap } from './validators.js';
 import {
   subscribe,
   getTasks,
@@ -6,10 +6,13 @@ import {
   addTask,
   updateTask,
   deleteTask,
-  sortTasks
+  sortTasks,
+  getSettings,
+  updateSettings
 } from './state.js';
 import { buildSearch, taskMatches } from './search.js';
-import { setFieldError, announce, renderTasks } from './ui.js';
+import { totalMinutes, topTag, lastSevenDays, capStatus, formatHours } from './stats.js';
+import { setFieldError, announce, renderTasks, renderStats, renderChart } from './ui.js';
 
 const form = document.getElementById('task-form');
 const searchInput = document.getElementById('search-input');
@@ -19,26 +22,63 @@ const searchStatus = document.getElementById('search-status');
 const table = document.querySelector('.records-table');
 const tbody = document.getElementById('records-body');
 const emptyMessage = document.getElementById('records-empty');
+const chart = document.getElementById('trend-chart');
+const capStatusRegion = document.getElementById('cap-status');
+const capAlertRegion = document.getElementById('cap-alert');
+const settingsForm = document.getElementById('settings-form');
+const capInput = document.getElementById('cap-input');
 
 const fieldIds = Object.keys(FIELD_VALIDATORS);
 const touched = new Set();
 
 const view = {
   editingId: null,
-  draft: null,
-  unit: 'minutes'
+  draft: null
 };
+
+let lastCapMessage = '';
+
+/* ===== Dashboard ===== */
+
+function renderDashboard(all) {
+  const { unit, weeklyCapHours } = getSettings();
+  const cap = capStatus(all, weeklyCapHours);
+
+  renderStats({
+    total: all.length,
+    minutes: totalMinutes(all),
+    top: topTag(all),
+    cap
+  }, unit);
+  renderChart(chart, lastSevenDays(all));
+
+  const message = cap.over
+    ? `Over your weekly cap by ${formatHours(-cap.remainingMinutes)}: ${formatHours(cap.usedMinutes)} planned this week against a ${weeklyCapHours} h cap.`
+    : `${formatHours(cap.remainingMinutes)} left of your ${weeklyCapHours} h weekly cap this week.`;
+  if (message === lastCapMessage) return;
+  lastCapMessage = message;
+
+  if (cap.over) {
+    capStatusRegion.textContent = '';
+    capAlertRegion.textContent = message;
+  } else {
+    capAlertRegion.textContent = '';
+    capStatusRegion.textContent = message;
+  }
+}
 
 /* ===== Rendering ===== */
 
 function render() {
   const all = getTasks();
+  const { unit } = getSettings();
+  renderDashboard(all);
   const search = buildSearch(searchInput.value, caseToggle.checked);
   const visible = sortTasks(all.filter((task) => taskMatches(task, search)), sortSelect.value);
 
   renderTasks(tbody, visible, {
     search,
-    unit: view.unit,
+    unit,
     editingId: view.editingId,
     draft: view.draft
   });
@@ -210,6 +250,33 @@ tbody.addEventListener('keydown', (event) => {
     event.preventDefault();
     saveEdit();
   }
+});
+
+/* ===== Weekly cap setting ===== */
+
+capInput.value = String(getSettings().weeklyCapHours);
+
+capInput.addEventListener('blur', () => {
+  setFieldError(capInput, validateCap(capInput.value));
+});
+
+capInput.addEventListener('input', () => {
+  if (capInput.getAttribute('aria-invalid') === 'true') {
+    setFieldError(capInput, validateCap(capInput.value));
+  }
+});
+
+settingsForm.addEventListener('submit', (event) => {
+  event.preventDefault();
+  const message = validateCap(capInput.value);
+  setFieldError(capInput, message);
+  if (message) {
+    announce('settings-status', 'Please fix the weekly cap before saving.');
+    capInput.focus();
+    return;
+  }
+  updateSettings({ weeklyCapHours: Number(capInput.value) });
+  announce('settings-status', `Weekly cap set to ${capInput.value} h.`);
 });
 
 /* ===== Search, sort and shortcuts ===== */
