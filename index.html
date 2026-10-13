@@ -60,10 +60,10 @@
     <section id="records" class="panel panel--wide" aria-labelledby="records-heading">
       <h2 id="records-heading">Tasks</h2>
       <div class="controls">
-        <div class="field">
+        <div class="field field--search">
           <label for="search-input">Search with a regex pattern</label>
-          <input id="search-input" type="search" autocomplete="off" spellcheck="false" aria-describedby="search-hint">
-          <p id="search-hint" class="hint">Examples: @tag:Study, exam|quiz, \b\d{2}:\d{2}\b</p>
+          <input id="search-input" type="search" autocomplete="off" spellcheck="false" aria-describedby="search-hint search-status">
+          <p id="search-hint" class="hint">Examples: @tag:Study, exam|quiz, \b\d{2}:\d{2}\b. Press / to jump here.</p>
         </div>
         <div class="field field--inline">
           <input id="search-case" type="checkbox" checked>
@@ -82,6 +82,7 @@
         </div>
       </div>
       <p id="search-status" class="status" role="status"></p>
+      <p id="records-status" class="status" role="status"></p>
 
       <table class="records-table" role="table">
         <caption class="visually-hidden">Your tasks</caption>
@@ -102,8 +103,6 @@
     <section id="add-task" class="panel panel--side" aria-labelledby="form-heading">
       <h2 id="form-heading">Add a task</h2>
       <form id="task-form" novalidate>
-        <input type="hidden" id="task-id">
-
         <div class="field">
           <label for="title">Title</label>
           <input id="title" name="title" type="text" autocomplete="off" aria-describedby="title-hint title-error">
@@ -143,7 +142,6 @@
 
         <div class="form-actions">
           <button type="submit" id="save-btn" class="btn btn--primary">Save task</button>
-          <button type="button" id="cancel-edit" class="btn" hidden>Cancel edit</button>
         </div>
         <p id="form-status" class="status" role="status"></p>
       </form>
@@ -223,6 +221,7 @@
   <footer class="site-footer">
     <p>Campus Life Planner · Built by Olga Igabe · African Leadership University, 2026</p>
   </footer>
-    <script type="module" src="scripts/main.js"></script>
+
+  <script type="module" src="scripts/main.js"></script>
 </body>
 </html>

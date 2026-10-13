@@ -3,10 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Validator Tests — Campus Life Planner</title>
+  <title>Tests — Campus Life Planner</title>
   <style>
     body { font-family: system-ui, sans-serif; margin: 0; padding: 1.5rem; color: #1e293b; background: #f8fafc; }
     h1 { margin-top: 0; }
+    h2 { margin-top: 1.5rem; font-size: 1.125rem; }
     #summary { font-weight: 700; font-size: 1.125rem; }
     .pass { color: #166534; }
     .fail { color: #b91c1c; font-weight: 700; }
@@ -15,9 +16,9 @@
 </head>
 <body>
   <main>
-    <h1>Validator tests</h1>
+    <h1>Campus Life Planner tests</h1>
     <p id="summary" role="status"></p>
-    <ol id="results"></ol>
+    <div id="results"></div>
   </main>
 
   <script type="module">
@@ -29,10 +30,20 @@
       validateCap,
       findDuplicateWord
     } from '../scripts/validators.js';
+    import { buildSearch, taskMatches, splitMatches } from '../scripts/search.js';
+    import { setTasks, getTasks, addTask, updateTask, deleteTask, sortTasks } from '../scripts/state.js';
 
     const results = document.getElementById('results');
+    let currentList = null;
     let passed = 0;
     let failed = 0;
+
+    function group(title) {
+      const heading = document.createElement('h2');
+      heading.textContent = title;
+      currentList = document.createElement('ol');
+      results.append(heading, currentList);
+    }
 
     function check(name, actual, expected) {
       const ok = actual === expected;
@@ -46,53 +57,101 @@
       item.textContent = ok
         ? `PASS: ${name}`
         : `FAIL: ${name} (expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)})`;
-      results.append(item);
+      currentList.append(item);
     }
 
     const isValid = (validate, value) => validate(value) === '';
 
-    check('title "Gym session" is valid', isValid(validateTitle, 'Gym session'), true);
-    check('title "A" (one character) is valid', isValid(validateTitle, 'A'), true);
-    check('title with leading space is invalid', isValid(validateTitle, ' Gym'), false);
-    check('title with trailing space is invalid', isValid(validateTitle, 'Gym '), false);
-    check('title with double space is invalid', isValid(validateTitle, 'Gym  session'), false);
-    check('title with repeated word is invalid', isValid(validateTitle, 'Read the the notes'), false);
+    group('Title');
+    check('"Gym session" is valid', isValid(validateTitle, 'Gym session'), true);
+    check('"A" (one character) is valid', isValid(validateTitle, 'A'), true);
+    check('leading space is invalid', isValid(validateTitle, ' Gym'), false);
+    check('trailing space is invalid', isValid(validateTitle, 'Gym '), false);
+    check('double space is invalid', isValid(validateTitle, 'Gym  session'), false);
+    check('repeated word is invalid', isValid(validateTitle, 'Read the the notes'), false);
     check('repeated word is caught across cases', isValid(validateTitle, 'The the plan'), false);
     check('empty title is invalid', isValid(validateTitle, ''), false);
 
-    check('duration "90" is valid', isValid(validateDuration, '90'), true);
-    check('duration "1" is valid', isValid(validateDuration, '1'), true);
-    check('duration "0" is invalid', isValid(validateDuration, '0'), false);
-    check('duration "090" is invalid', isValid(validateDuration, '090'), false);
-    check('duration "45.5" is invalid', isValid(validateDuration, '45.5'), false);
-    check('duration "-5" is invalid', isValid(validateDuration, '-5'), false);
-    check('duration "abc" is invalid', isValid(validateDuration, 'abc'), false);
+    group('Duration');
+    check('"90" is valid', isValid(validateDuration, '90'), true);
+    check('"1" is valid', isValid(validateDuration, '1'), true);
+    check('"0" is invalid', isValid(validateDuration, '0'), false);
+    check('"090" is invalid', isValid(validateDuration, '090'), false);
+    check('"45.5" is invalid', isValid(validateDuration, '45.5'), false);
+    check('"-5" is invalid', isValid(validateDuration, '-5'), false);
+    check('"abc" is invalid', isValid(validateDuration, 'abc'), false);
     check('empty duration is invalid', isValid(validateDuration, ''), false);
 
-    check('date "2026-10-14" is valid', isValid(validateDate, '2026-10-14'), true);
+    group('Due date');
+    check('"2026-10-14" is valid', isValid(validateDate, '2026-10-14'), true);
     check('leap day "2028-02-29" is valid', isValid(validateDate, '2028-02-29'), true);
-    check('date "2026-02-29" (not a leap year) is invalid', isValid(validateDate, '2026-02-29'), false);
-    check('date "2026-02-30" is invalid', isValid(validateDate, '2026-02-30'), false);
-    check('date "2026-13-01" is invalid', isValid(validateDate, '2026-13-01'), false);
-    check('date "14/10/2026" is invalid', isValid(validateDate, '14/10/2026'), false);
-    check('date "2026-1-5" is invalid', isValid(validateDate, '2026-1-5'), false);
+    check('"2026-02-29" (not a leap year) is invalid', isValid(validateDate, '2026-02-29'), false);
+    check('"2026-02-30" is invalid', isValid(validateDate, '2026-02-30'), false);
+    check('"2026-13-01" is invalid', isValid(validateDate, '2026-13-01'), false);
+    check('"14/10/2026" is invalid', isValid(validateDate, '14/10/2026'), false);
+    check('"2026-1-5" is invalid', isValid(validateDate, '2026-1-5'), false);
 
-    check('tag "Study" is valid', isValid(validateTag, 'Study'), true);
-    check('tag "Club-Meeting" is valid', isValid(validateTag, 'Club-Meeting'), true);
-    check('tag "Self Study" is valid', isValid(validateTag, 'Self Study'), true);
-    check('tag "Study!" is invalid', isValid(validateTag, 'Study!'), false);
-    check('tag "-Club" is invalid', isValid(validateTag, '-Club'), false);
-    check('tag "Club  Meeting" is invalid', isValid(validateTag, 'Club  Meeting'), false);
-    check('tag "Study2" is invalid', isValid(validateTag, 'Study2'), false);
+    group('Tag');
+    check('"Study" is valid', isValid(validateTag, 'Study'), true);
+    check('"Club-Meeting" is valid', isValid(validateTag, 'Club-Meeting'), true);
+    check('"Self Study" is valid', isValid(validateTag, 'Self Study'), true);
+    check('"Study!" is invalid', isValid(validateTag, 'Study!'), false);
+    check('"-Club" is invalid', isValid(validateTag, '-Club'), false);
+    check('"Club  Meeting" (double space) is invalid', isValid(validateTag, 'Club  Meeting'), false);
+    check('"Study2" is invalid', isValid(validateTag, 'Study2'), false);
 
-    check('cap "20" is valid', isValid(validateCap, '20'), true);
-    check('cap "0" is invalid', isValid(validateCap, '0'), false);
-    check('cap "2.5" is invalid', isValid(validateCap, '2.5'), false);
+    group('Weekly cap');
+    check('"20" is valid', isValid(validateCap, '20'), true);
+    check('"0" is invalid', isValid(validateCap, '0'), false);
+    check('"2.5" is invalid', isValid(validateCap, '2.5'), false);
 
-    check('back-reference finds "the" in "Read the the notes"', findDuplicateWord('Read the the notes'), 'the');
-    check('back-reference finds nothing in "Read the notes"', findDuplicateWord('Read the notes'), null);
-    check('back-reference ignores "the theory"', findDuplicateWord('the theory'), null);
-    check('back-reference finds "Study" in "Study study group"', findDuplicateWord('Study study group'), 'Study');
+    group('Advanced regex: back-reference');
+    check('finds "the" in "Read the the notes"', findDuplicateWord('Read the the notes'), 'the');
+    check('finds nothing in "Read the notes"', findDuplicateWord('Read the notes'), null);
+    check('ignores "the theory"', findDuplicateWord('the theory'), null);
+    check('finds "Study" in "Study study group"', findDuplicateWord('Study study group'), 'Study');
+
+    group('Regex search');
+    const exam = { id: 'task_0001', title: 'Final Exam at 10:30', dueDate: '2026-10-20', duration: 120, tag: 'Class' };
+    const gym = { id: 'task_0002', title: 'Gym session', dueDate: '2026-10-15', duration: 60, tag: 'Sports' };
+    check('empty search is inactive', buildSearch('', true).active, false);
+    check('"(" is caught as invalid regex', buildSearch('(', true).valid, false);
+    check('invalid regex shows every task', taskMatches(gym, buildSearch('(', true)), true);
+    check('"exam" matches "Final Exam" when ignoring case', taskMatches(exam, buildSearch('exam', true)), true);
+    check('"exam" does not match "Final Exam" when case matters', taskMatches(exam, buildSearch('exam', false)), false);
+    check('time token \\b\\d{2}:\\d{2}\\b matches "10:30"', taskMatches(exam, buildSearch('\\b\\d{2}:\\d{2}\\b', true)), true);
+    check('"@tag:Sports" filters by tag', taskMatches(gym, buildSearch('@tag:Sports', true)), true);
+    check('"@tag:Sports" excludes other tags', taskMatches(exam, buildSearch('@tag:Sports', true)), false);
+    check('"@tag:" with nothing after it is inactive', buildSearch('@tag:', true).active, false);
+
+    group('Highlighting');
+    const parts = splitMatches('Read the notes', /the/);
+    check('splits "Read the notes" into 3 parts', parts.length, 3);
+    check('middle part is the match', parts[1].match && parts[1].text === 'the', true);
+    check('zero-length pattern does not freeze', splitMatches('abc', /x*/).length, 1);
+    check('every match is found, not just the first', splitMatches('a-a-a', /a/).filter((p) => p.match).length, 3);
+
+    group('State and sorting');
+    setTasks([]);
+    const first = addTask({ title: 'Lab report', dueDate: '2026-10-16', duration: '45', tag: 'Assignment' });
+    check('first id is task_0001', first.id, 'task_0001');
+    check('duration is stored as a number', first.duration, 45);
+    check('createdAt equals updatedAt for a new task', first.createdAt === first.updatedAt, true);
+    setTasks([{ ...exam, id: 'task_0007', createdAt: '2026-10-01T00:00:00.000Z', updatedAt: '2026-10-01T00:00:00.000Z' }]);
+    check('next id continues after the highest existing id', addTask({ title: 'Read', dueDate: '2026-10-17', duration: '30', tag: 'Study' }).id, 'task_0008');
+    const updated = updateTask('task_0007', { title: 'Final exam', dueDate: '2026-10-21', duration: '90', tag: 'Class' });
+    check('update keeps createdAt', updated.createdAt, '2026-10-01T00:00:00.000Z');
+    check('update changes updatedAt', updated.updatedAt !== '2026-10-01T00:00:00.000Z', true);
+    check('delete removes the task', deleteTask('task_0008') && getTasks().length === 1, true);
+    check('deleting a missing id returns false', deleteTask('task_9999'), false);
+
+    const list = [exam, gym, { id: 'task_0003', title: 'art club', dueDate: '2026-10-18', duration: 30, tag: 'Meeting' }];
+    check('due date ascending puts the soonest first', sortTasks(list, 'dueDate-asc')[0].id, 'task_0002');
+    check('due date descending puts the latest first', sortTasks(list, 'dueDate-desc')[0].id, 'task_0001');
+    check('title A to Z ignores upper/lower case', sortTasks(list, 'title-asc')[0].title, 'art club');
+    check('duration descending puts the longest first', sortTasks(list, 'duration-desc')[0].duration, 120);
+    check('duration ascending puts the shortest first', sortTasks(list, 'duration-asc')[0].duration, 30);
+    check('sorting does not change the original list', list[0].id, 'task_0001');
 
     document.getElementById('summary').textContent =
       `${passed} passed, ${failed} failed (${passed + failed} tests)`;

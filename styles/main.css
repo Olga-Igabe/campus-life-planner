@@ -9,6 +9,7 @@
   --input-border: #64748b;
   --primary: #0f766e;
   --primary-dark: #115e59;
+  --primary-tint: #f0fdfa;
   --danger: #b91c1c;
   --danger-bg: #fef2f2;
   --focus: #1d4ed8;
@@ -22,6 +23,10 @@
 *::before,
 *::after {
   box-sizing: border-box;
+}
+
+[hidden] {
+  display: none !important;
 }
 
 html {
@@ -325,6 +330,11 @@ input[type="file"] {
   transform: translateY(1px);
 }
 
+.btn--small {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.875rem;
+}
+
 .btn--primary {
   color: #ffffff;
   background: var(--primary);
@@ -384,9 +394,15 @@ input[type="file"] {
   border-radius: var(--radius-sm);
 }
 
+.records-table tr.is-editing {
+  background: var(--primary-tint);
+  border-color: var(--primary);
+}
+
 .records-table td {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   gap: 1rem;
   padding: 0.25rem 0;
   overflow-wrap: anywhere;
@@ -397,6 +413,18 @@ input[type="file"] {
   flex-shrink: 0;
   font-weight: 600;
   color: var(--muted);
+}
+
+.records-table td.edit-cell {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.25rem;
+}
+
+.row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
 mark {
@@ -517,18 +545,13 @@ fieldset {
     flex: 1 1 200px;
   }
 
+  .controls .field--search {
+    flex: 2 1 100%;
+  }
+
   .controls .field--inline {
     flex: 0 0 auto;
     padding-bottom: 0.6rem;
-  }
-
-  .records-table thead {
-    position: static;
-    width: auto;
-    height: auto;
-    overflow: visible;
-    clip: auto;
-    white-space: normal;
   }
 
   .records-table {
@@ -536,7 +559,13 @@ fieldset {
   }
 
   .records-table thead {
+    position: static;
     display: table-header-group;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip: auto;
+    white-space: normal;
   }
 
   .records-table tbody {
@@ -552,8 +581,13 @@ fieldset {
     border-radius: 0;
   }
 
+  .records-table tr.is-editing {
+    background: var(--primary-tint);
+  }
+
   .records-table th,
-  .records-table td {
+  .records-table td,
+  .records-table td.edit-cell {
     display: table-cell;
     padding: 0.75rem;
     text-align: left;
@@ -569,7 +603,7 @@ fieldset {
     content: none;
   }
 
-  .records-table tbody tr:hover td {
+  .records-table tbody tr:not(.is-editing):hover td {
     background: var(--bg);
   }
 
