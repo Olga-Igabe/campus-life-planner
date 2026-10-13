@@ -179,6 +179,8 @@ form.addEventListener('submit', (event) => {
     values[id] = document.getElementById(id).value;
   });
   const task = addTask(values);
+  const newRow = tbody.querySelector(`tr[data-id="${task.id}"]`);
+  if (newRow) newRow.classList.add('is-new');
 
   form.reset();
   touched.clear();
