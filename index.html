@@ -178,9 +178,10 @@
           <div class="field">
             <label for="new-tag">New tag</label>
             <div class="tag-row">
-              <input id="new-tag" type="text" autocomplete="off" aria-describedby="new-tag-error">
+              <input id="new-tag" type="text" autocomplete="off" aria-describedby="new-tag-hint new-tag-error">
               <button type="button" id="add-tag" class="btn">Add tag</button>
             </div>
+            <p id="new-tag-hint" class="hint">Letters, spaces and hyphens. New tags appear in the form's tag list.</p>
             <p id="new-tag-error" class="error"></p>
           </div>
           <ul id="tag-manager" class="tag-list" aria-label="Your tags"></ul>
@@ -194,6 +195,7 @@
               <label for="import-file">Import tasks from a JSON file</label>
               <input id="import-file" type="file" accept=".json,application/json">
             </div>
+            <button type="button" id="sample-btn" class="btn">Load sample tasks</button>
             <button type="button" id="clear-btn" class="btn btn--danger">Delete all tasks</button>
           </div>
         </div>

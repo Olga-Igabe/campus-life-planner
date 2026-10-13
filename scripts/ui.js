@@ -198,3 +198,28 @@ export function renderChart(container, days) {
   const summary = days.map((day) => `${day.longLabel}: ${day.minutes} minutes`).join('; ');
   container.setAttribute('aria-label', `Planned minutes for tasks due in the last 7 days. ${summary}.`);
 }
+
+export function renderTags(tags) {
+  const datalist = document.getElementById('tag-options');
+  datalist.replaceChildren(...tags.map((tag) => {
+    const option = document.createElement('option');
+    option.value = tag;
+    return option;
+  }));
+
+  const list = document.getElementById('tag-manager');
+  list.replaceChildren(...tags.map((tag) => {
+    const item = document.createElement('li');
+    item.className = 'tag-chip';
+    const name = document.createElement('span');
+    name.textContent = tag;
+    const remove = document.createElement('button');
+    remove.type = 'button';
+    remove.className = 'tag-remove';
+    remove.dataset.tag = tag;
+    remove.setAttribute('aria-label', `Remove tag ${tag}`);
+    remove.textContent = '×';
+    item.append(name, remove);
+    return item;
+  }));
+}

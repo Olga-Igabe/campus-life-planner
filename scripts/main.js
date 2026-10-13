@@ -1,8 +1,9 @@
-import { FIELD_VALIDATORS, validateCap } from './validators.js';
+import { FIELD_VALIDATORS, validateCap, validateTag } from './validators.js';
 import {
   subscribe,
   getTasks,
   getTask,
+  setTasks,
   addTask,
   updateTask,
   deleteTask,
@@ -11,8 +12,16 @@ import {
   updateSettings
 } from './state.js';
 import { buildSearch, taskMatches } from './search.js';
-import { totalMinutes, topTag, lastSevenDays, capStatus, formatHours } from './stats.js';
-import { setFieldError, announce, renderTasks, renderStats, renderChart } from './ui.js';
+import { totalMinutes, topTag, lastSevenDays, capStatus, formatHours, toISODate } from './stats.js';
+import { loadTasks, loadSettings, saveAll, parseImport, validateTaskList } from './storage.js';
+import {
+  setFieldError,
+  announce,
+  renderTasks,
+  renderStats,
+  renderChart,
+  renderTags
+} from './ui.js';
 
 const form = document.getElementById('task-form');
 const searchInput = document.getElementById('search-input');
@@ -27,6 +36,10 @@ const capStatusRegion = document.getElementById('cap-status');
 const capAlertRegion = document.getElementById('cap-alert');
 const settingsForm = document.getElementById('settings-form');
 const capInput = document.getElementById('cap-input');
+const unitRadios = document.querySelectorAll('input[name="unit"]');
+const newTagInput = document.getElementById('new-tag');
+const tagManager = document.getElementById('tag-manager');
+const importInput = document.getElementById('import-file');
 
 const fieldIds = Object.keys(FIELD_VALIDATORS);
 const touched = new Set();
@@ -37,6 +50,11 @@ const view = {
 };
 
 let lastCapMessage = '';
+
+function count(number, word) {
+  return `${number} ${word}${number === 1 ? '' : 's'}`;
+}
+let saveWarningShown = false;
 
 /* ===== Dashboard ===== */
 
@@ -53,7 +71,7 @@ function renderDashboard(all) {
   renderChart(chart, lastSevenDays(all));
 
   const message = cap.over
-    ? `Over your weekly cap by ${formatHours(-cap.remainingMinutes)}: ${formatHours(cap.usedMinutes)} planned this week against a ${weeklyCapHours} h cap.`
+    ? `Over your weekly cap by ${formatHours(-cap.remainingMinutes)}: ${formatHours(cap.usedMinutes)} planned this week against your ${weeklyCapHours} h cap.`
     : `${formatHours(cap.remainingMinutes)} left of your ${weeklyCapHours} h weekly cap this week.`;
   if (message === lastCapMessage) return;
   lastCapMessage = message;
@@ -71,14 +89,16 @@ function renderDashboard(all) {
 
 function render() {
   const all = getTasks();
-  const { unit } = getSettings();
+  const settings = getSettings();
   renderDashboard(all);
+  renderTags(settings.tags);
+
   const search = buildSearch(searchInput.value, caseToggle.checked);
   const visible = sortTasks(all.filter((task) => taskMatches(task, search)), sortSelect.value);
 
   renderTasks(tbody, visible, {
     search,
-    unit,
+    unit: settings.unit,
     editingId: view.editingId,
     draft: view.draft
   });
@@ -97,14 +117,27 @@ function render() {
   } else {
     searchInput.removeAttribute('aria-invalid');
     searchStatus.textContent = search.active
-      ? `${visible.length} of ${all.length} tasks match.`
+      ? `${visible.length} of ${count(all.length, 'task')} match.`
       : '';
+  }
+}
+
+function persist() {
+  const saved = saveAll(getTasks(), getSettings());
+  if (!saved && !saveWarningShown) {
+    saveWarningShown = true;
+    announce('settings-status', 'Changes could not be saved in this browser. Export your tasks to keep a copy.');
   }
 }
 
 function focusRowButton(id, action) {
   const button = tbody.querySelector(`tr[data-id="${id}"] button[data-action="${action}"]`);
   if (button) button.focus();
+}
+
+function stopEditing() {
+  view.editingId = null;
+  view.draft = null;
 }
 
 /* ===== Add form ===== */
@@ -172,8 +205,7 @@ function startEdit(id) {
 
 function cancelEdit() {
   const id = view.editingId;
-  view.editingId = null;
-  view.draft = null;
+  stopEditing();
   render();
   announce('records-status', 'Edit cancelled.');
   focusRowButton(id, 'edit');
@@ -197,8 +229,7 @@ function saveEdit() {
   }
 
   const changes = { ...view.draft };
-  view.editingId = null;
-  view.draft = null;
+  stopEditing();
   const task = updateTask(id, changes);
   announce('records-status', `Task "${task.title}" updated.`);
   focusRowButton(id, 'edit');
@@ -212,10 +243,7 @@ function removeTask(id) {
     focusRowButton(id, 'delete');
     return;
   }
-  if (view.editingId === id) {
-    view.editingId = null;
-    view.draft = null;
-  }
+  if (view.editingId === id) stopEditing();
   deleteTask(id);
   announce('records-status', `Task "${task.title}" deleted.`);
   searchInput.focus();
@@ -252,9 +280,15 @@ tbody.addEventListener('keydown', (event) => {
   }
 });
 
-/* ===== Weekly cap setting ===== */
+/* ===== Settings: units and weekly cap ===== */
 
-capInput.value = String(getSettings().weeklyCapHours);
+unitRadios.forEach((radio) => {
+  radio.addEventListener('change', () => {
+    if (!radio.checked) return;
+    updateSettings({ unit: radio.value });
+    announce('settings-status', `Durations are now shown in ${radio.value}.`);
+  });
+});
 
 capInput.addEventListener('blur', () => {
   setFieldError(capInput, validateCap(capInput.value));
@@ -279,6 +313,127 @@ settingsForm.addEventListener('submit', (event) => {
   announce('settings-status', `Weekly cap set to ${capInput.value} h.`);
 });
 
+/* ===== Settings: tags ===== */
+
+function addTag() {
+  const value = newTagInput.value;
+  let message = validateTag(value);
+  const { tags } = getSettings();
+  if (!message && tags.some((tag) => tag.toLowerCase() === value.toLowerCase())) {
+    message = 'That tag already exists.';
+  }
+  setFieldError(newTagInput, message);
+  if (message) {
+    newTagInput.focus();
+    return;
+  }
+  updateSettings({ tags: [...tags, value] });
+  newTagInput.value = '';
+  announce('settings-status', `Tag "${value}" added.`);
+}
+
+document.getElementById('add-tag').addEventListener('click', addTag);
+
+newTagInput.addEventListener('keydown', (event) => {
+  if (event.key === 'Enter') {
+    event.preventDefault();
+    addTag();
+  }
+});
+
+newTagInput.addEventListener('input', () => {
+  if (newTagInput.getAttribute('aria-invalid') === 'true') setFieldError(newTagInput, '');
+});
+
+tagManager.addEventListener('click', (event) => {
+  const button = event.target.closest('button[data-tag]');
+  if (!button) return;
+  const { tag } = button.dataset;
+  updateSettings({ tags: getSettings().tags.filter((item) => item !== tag) });
+  announce('settings-status', `Tag "${tag}" removed. Tasks that already use it keep it.`);
+  newTagInput.focus();
+});
+
+/* ===== Settings: data ===== */
+
+function replaceTasks(tasks, sourceName) {
+  const current = getTasks().length;
+  if (current > 0) {
+    const confirmed = window.confirm(
+      `Replace your ${count(current, 'current task')} with ${count(tasks.length, 'task')} from ${sourceName}?`
+    );
+    if (!confirmed) {
+      announce('settings-status', 'Nothing was changed.');
+      return;
+    }
+  }
+  stopEditing();
+  setTasks(tasks);
+  announce('settings-status', `Loaded ${count(tasks.length, 'task')} from ${sourceName}.`);
+}
+
+document.getElementById('export-btn').addEventListener('click', () => {
+  const tasks = getTasks();
+  if (tasks.length === 0) {
+    announce('settings-status', 'There are no tasks to export yet.');
+    return;
+  }
+  const blob = new Blob([JSON.stringify(tasks, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `campus-life-planner-${toISODate(new Date())}.json`;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  announce('settings-status', `Exported ${count(tasks.length, 'task')} as JSON.`);
+});
+
+importInput.addEventListener('change', async () => {
+  const [file] = importInput.files;
+  if (!file) return;
+  try {
+    const result = parseImport(await file.text());
+    if (!result.ok) {
+      announce('settings-status', `Import failed: ${result.error} Your tasks were not changed.`);
+      return;
+    }
+    replaceTasks(result.tasks, file.name);
+  } catch {
+    announce('settings-status', 'Import failed: the file could not be read. Your tasks were not changed.');
+  } finally {
+    importInput.value = '';
+  }
+});
+
+document.getElementById('sample-btn').addEventListener('click', async () => {
+  try {
+    const response = await fetch('seed.json');
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const result = validateTaskList(await response.json());
+    if (!result.ok) throw new Error(result.error);
+    replaceTasks(result.tasks, 'the sample file');
+  } catch {
+    announce('settings-status', 'The sample tasks could not be loaded. Run the app through a local server or the live site.');
+  }
+});
+
+document.getElementById('clear-btn').addEventListener('click', () => {
+  const total = getTasks().length;
+  if (total === 0) {
+    announce('settings-status', 'There are no tasks to delete.');
+    return;
+  }
+  if (!window.confirm(`Delete all ${count(total, 'task')}? This cannot be undone. Export first if you want a copy.`)) {
+    announce('settings-status', 'Nothing was deleted.');
+    return;
+  }
+  stopEditing();
+  setTasks([]);
+  announce('settings-status', `Deleted ${count(total, 'task')}.`);
+});
+
 /* ===== Search, sort and shortcuts ===== */
 
 searchInput.addEventListener('input', render);
@@ -294,5 +449,20 @@ document.addEventListener('keydown', (event) => {
   }
 });
 
+/* ===== Start-up ===== */
+
+const savedSettings = loadSettings();
+const savedTasks = loadTasks();
+updateSettings(savedSettings);
+setTasks(savedTasks.tasks);
+
+capInput.value = String(savedSettings.weeklyCapHours);
+unitRadios.forEach((radio) => {
+  radio.checked = radio.value === savedSettings.unit;
+});
+
+subscribe(persist);
 subscribe(render);
 render();
+
+if (savedTasks.problem) announce('settings-status', savedTasks.problem);

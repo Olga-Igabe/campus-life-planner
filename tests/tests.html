@@ -33,6 +33,7 @@
     import { buildSearch, taskMatches, splitMatches } from '../scripts/search.js';
     import { setTasks, getTasks, addTask, updateTask, deleteTask, sortTasks } from '../scripts/state.js';
     import { totalMinutes, topTag, lastSevenDays, weekRange, capStatus, formatHours } from '../scripts/stats.js';
+    import { parseImport, validateTaskList, cleanSettings } from '../scripts/storage.js';
 
     const results = document.getElementById('results');
     let currentList = null;
@@ -183,6 +184,46 @@
     check('remaining minutes go negative when over', capStatus(week, 4, wednesday).remainingMinutes, -30);
     check('90 minutes formats as 1.5 h', formatHours(90), '1.5 h');
     check('20 minutes rounds to 0.33 h', formatHours(20), '0.33 h');
+
+    group('Import validation (JSON round trip)');
+    const stamp = '2026-10-12T08:00:00.000Z';
+    const good = { id: 'task_0001', title: 'Lab report', dueDate: '2026-10-16', duration: 45, tag: 'Assignment', createdAt: stamp, updatedAt: stamp };
+    const withChange = (changes) => JSON.stringify([{ ...good, ...changes }]);
+    check('text that is not JSON is rejected', parseImport('not json').ok, false);
+    check('an object instead of a list is rejected', parseImport('{}').ok, false);
+    check('an empty list is accepted', parseImport('[]').ok, true);
+    check('a valid task is accepted', parseImport(JSON.stringify([good])).ok, true);
+    check('export then import gives back the same tasks', JSON.stringify(parseImport(JSON.stringify([good])).tasks), JSON.stringify([good]));
+    check('a missing id is rejected', parseImport(withChange({ id: undefined })).ok, false);
+    check('an id in the wrong format is rejected', parseImport(withChange({ id: 'abc' })).ok, false);
+    check('duplicate ids are rejected', parseImport(JSON.stringify([good, good])).ok, false);
+    check('a title with a leading space is rejected', parseImport(withChange({ title: ' Lab' })).ok, false);
+    check('an impossible date is rejected', parseImport(withChange({ dueDate: '2026-02-30' })).ok, false);
+    check('a decimal duration is rejected', parseImport(withChange({ duration: 12.5 })).ok, false);
+    check('a duration stored as text is rejected', parseImport(withChange({ duration: '45' })).ok, false);
+    check('a tag with symbols is rejected', parseImport(withChange({ tag: 'Study!' })).ok, false);
+    check('a missing timestamp is rejected', parseImport(withChange({ createdAt: 'yesterday' })).ok, false);
+    check('the error names the task that failed', parseImport(JSON.stringify([good, { ...good, id: 'task_0002', tag: '' }])).error.startsWith('Task 2'), true);
+    check('unknown extra fields are dropped', 'extra' in parseImport(withChange({ extra: 'x' })).tasks[0], false);
+
+    group('Settings clean-up');
+    check('an unknown unit falls back to minutes', cleanSettings({ unit: 'days' }).unit, 'minutes');
+    check('hours is kept as a unit', cleanSettings({ unit: 'hours' }).unit, 'hours');
+    check('a cap of 0 falls back to 20', cleanSettings({ weeklyCapHours: 0 }).weeklyCapHours, 20);
+    check('invalid and repeated tags are removed', cleanSettings({ tags: ['Study', 'Study', 'Bad!'] }).tags.join(','), 'Study');
+    check('missing settings give the defaults', cleanSettings(null).tags.length, 7);
+
+    group('seed.json');
+    try {
+      const response = await fetch('../seed.json');
+      const seed = validateTaskList(await response.json());
+      check('seed.json passes import validation', seed.ok, true);
+      check('seed.json has at least 10 tasks', seed.ok && seed.tasks.length >= 10, true);
+      check('seed.json includes a leap day', seed.ok && seed.tasks.some((task) => task.dueDate.endsWith('-02-29')), true);
+      check('seed.json includes a 1-minute task', seed.ok && seed.tasks.some((task) => task.duration === 1), true);
+    } catch {
+      check('seed.json could be loaded (open this page through a local server)', false, true);
+    }
 
     document.getElementById('summary').textContent =
       `${passed} passed, ${failed} failed (${passed + failed} tests)`;

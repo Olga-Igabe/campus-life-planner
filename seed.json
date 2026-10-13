@@ -1,0 +1,110 @@
+[
+  {
+    "id": "task_0001",
+    "title": "Read 'Things Fall Apart' chapters 3-4",
+    "dueDate": "2026-10-07",
+    "duration": 90,
+    "tag": "Study",
+    "createdAt": "2026-10-01T08:15:00.000Z",
+    "updatedAt": "2026-10-01T08:15:00.000Z"
+  },
+  {
+    "id": "task_0002",
+    "title": "Negpod meeting at 14:00 in Room 2",
+    "dueDate": "2026-10-09",
+    "duration": 60,
+    "tag": "Groupwork",
+    "createdAt": "2026-10-02T10:00:00.000Z",
+    "updatedAt": "2026-10-05T16:40:00.000Z"
+  },
+  {
+    "id": "task_0003",
+    "title": "Weekend gym training",
+    "dueDate": "2026-10-11",
+    "duration": 120,
+    "tag": "Sports",
+    "createdAt": "2026-10-03T07:30:00.000Z",
+    "updatedAt": "2026-10-03T07:30:00.000Z"
+  },
+  {
+    "id": "task_0004",
+    "title": "Web Programming lecture",
+    "dueDate": "2026-10-12",
+    "duration": 120,
+    "tag": "Class",
+    "createdAt": "2026-10-05T09:00:00.000Z",
+    "updatedAt": "2026-10-05T09:00:00.000Z"
+  },
+  {
+    "id": "task_0005",
+    "title": "Campus Life Planner summative",
+    "dueDate": "2026-10-14",
+    "duration": 600,
+    "tag": "Assignment",
+    "createdAt": "2026-10-06T12:00:00.000Z",
+    "updatedAt": "2026-10-12T21:05:00.000Z"
+  },
+  {
+    "id": "task_0006",
+    "title": "Quiz prep: regex, lookaheads & back-references",
+    "dueDate": "2026-10-13",
+    "duration": 45,
+    "tag": "Study",
+    "createdAt": "2026-10-08T18:20:00.000Z",
+    "updatedAt": "2026-10-08T18:20:00.000Z"
+  },
+  {
+    "id": "task_0007",
+    "title": "Coding club demo <HTML & CSS> at 17:30",
+    "dueDate": "2026-10-15",
+    "duration": 75,
+    "tag": "Club-Meeting",
+    "createdAt": "2026-10-09T11:45:00.000Z",
+    "updatedAt": "2026-10-09T11:45:00.000Z"
+  },
+  {
+    "id": "task_0008",
+    "title": "Movie night with friends",
+    "dueDate": "2026-10-17",
+    "duration": 150,
+    "tag": "Entertainment",
+    "createdAt": "2026-10-10T19:00:00.000Z",
+    "updatedAt": "2026-10-10T19:00:00.000Z"
+  },
+  {
+    "id": "task_0009",
+    "title": "Reply to mentor email",
+    "dueDate": "2026-10-13",
+    "duration": 1,
+    "tag": "Meeting",
+    "createdAt": "2026-10-11T06:10:00.000Z",
+    "updatedAt": "2026-10-11T06:10:00.000Z"
+  },
+  {
+    "id": "task_0010",
+    "title": "Hackathon: 24-hour build",
+    "dueDate": "2026-12-31",
+    "duration": 1440,
+    "tag": "Self Study",
+    "createdAt": "2026-10-11T14:30:00.000Z",
+    "updatedAt": "2026-10-11T14:30:00.000Z"
+  },
+  {
+    "id": "task_0011",
+    "title": "New Year planning session",
+    "dueDate": "2027-01-01",
+    "duration": 30,
+    "tag": "Personal-Goals",
+    "createdAt": "2026-10-12T08:00:00.000Z",
+    "updatedAt": "2026-10-12T08:00:00.000Z"
+  },
+  {
+    "id": "task_0012",
+    "title": "Leap day check-in",
+    "dueDate": "2028-02-29",
+    "duration": 5,
+    "tag": "Class",
+    "createdAt": "2026-10-12T08:05:00.000Z",
+    "updatedAt": "2026-10-12T08:05:00.000Z"
+  }
+]
