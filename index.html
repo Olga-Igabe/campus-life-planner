@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Campus Life Planner: plan classes, assignments, study time and campus events.">
+  <title>Campus Life Planner</title>
+  <link rel="stylesheet" href="styles/main.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <h1 class="site-title">Campus Life Planner</h1>
+      <nav aria-label="Main">
+        <ul class="nav-list">
+          <li><a href="#dashboard">Dashboard</a></li>
+          <li><a href="#records">Tasks</a></li>
+          <li><a href="#add-task">Add task</a></li>
+          <li><a href="#settings">Settings</a></li>
+          <li><a href="#about">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main" tabindex="-1">
+
+    <section id="dashboard" class="panel panel--full" aria-labelledby="dashboard-heading">
+      <h2 id="dashboard-heading">Dashboard</h2>
+      <div class="dashboard-body">
+        <div class="stats">
+          <article class="stat">
+            <h3 class="stat-label">Total tasks</h3>
+            <p class="stat-value" id="stat-total">0</p>
+          </article>
+          <article class="stat">
+            <h3 class="stat-label">Planned time</h3>
+            <p class="stat-value" id="stat-time">0 min</p>
+          </article>
+          <article class="stat">
+            <h3 class="stat-label">Top tag</h3>
+            <p class="stat-value" id="stat-top-tag">None yet</p>
+          </article>
+          <article class="stat">
+            <h3 class="stat-label">Weekly cap</h3>
+            <p class="stat-value" id="stat-cap">20 h</p>
+          </article>
+        </div>
+        <figure class="trend">
+          <figcaption>Planned minutes, last 7 days</figcaption>
+          <div id="trend-chart" class="chart" role="img" aria-label="No tasks in the last 7 days"></div>
+        </figure>
+      </div>
+      <p id="cap-status" class="cap-message" role="status" aria-live="polite"></p>
+      <p id="cap-alert" class="cap-message cap-message--over" aria-live="assertive"></p>
+    </section>
+
+    <section id="records" class="panel panel--wide" aria-labelledby="records-heading">
+      <h2 id="records-heading">Tasks</h2>
+      <div class="controls">
+        <div class="field">
+          <label for="search-input">Search with a regex pattern</label>
+          <input id="search-input" type="search" autocomplete="off" spellcheck="false" aria-describedby="search-hint">
+          <p id="search-hint" class="hint">Examples: @tag:Study, exam|quiz, \b\d{2}:\d{2}\b</p>
+        </div>
+        <div class="field field--inline">
+          <input id="search-case" type="checkbox" checked>
+          <label for="search-case">Ignore upper and lower case</label>
+        </div>
+        <div class="field">
+          <label for="sort-select">Sort by</label>
+          <select id="sort-select">
+            <option value="dueDate-asc">Due date (soonest first)</option>
+            <option value="dueDate-desc">Due date (latest first)</option>
+            <option value="title-asc">Title (A to Z)</option>
+            <option value="title-desc">Title (Z to A)</option>
+            <option value="duration-asc">Duration (shortest first)</option>
+            <option value="duration-desc">Duration (longest first)</option>
+          </select>
+        </div>
+      </div>
+      <p id="search-status" class="status" role="status"></p>
+
+      <table class="records-table" role="table">
+        <caption class="visually-hidden">Your tasks</caption>
+        <thead role="rowgroup">
+          <tr role="row">
+            <th role="columnheader" scope="col">Title</th>
+            <th role="columnheader" scope="col">Due date</th>
+            <th role="columnheader" scope="col">Duration</th>
+            <th role="columnheader" scope="col">Tag</th>
+            <th role="columnheader" scope="col">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="records-body" role="rowgroup"></tbody>
+      </table>
+      <p id="records-empty" class="empty">No tasks yet. Add your first one in the form.</p>
+    </section>
+
+    <section id="add-task" class="panel panel--side" aria-labelledby="form-heading">
+      <h2 id="form-heading">Add a task</h2>
+      <form id="task-form" novalidate>
+        <input type="hidden" id="task-id">
+
+        <div class="field">
+          <label for="title">Title</label>
+          <input id="title" name="title" type="text" autocomplete="off" aria-describedby="title-hint title-error">
+          <p id="title-hint" class="hint">No spaces at the start or end, and no repeated words.</p>
+          <p id="title-error" class="error"></p>
+        </div>
+
+        <div class="field">
+          <label for="dueDate">Due date</label>
+          <input id="dueDate" name="dueDate" type="text" inputmode="numeric" autocomplete="off" aria-describedby="dueDate-hint dueDate-error">
+          <p id="dueDate-hint" class="hint">Format YYYY-MM-DD, for example 2026-10-14.</p>
+          <p id="dueDate-error" class="error"></p>
+        </div>
+
+        <div class="field">
+          <label for="duration">Duration (minutes)</label>
+          <input id="duration" name="duration" type="text" inputmode="numeric" autocomplete="off" aria-describedby="duration-hint duration-error">
+          <p id="duration-hint" class="hint">Whole minutes, at least 1.</p>
+          <p id="duration-error" class="error"></p>
+        </div>
+
+        <div class="field">
+          <label for="tag">Tag</label>
+          <input id="tag" name="tag" type="text" list="tag-options" autocomplete="off" aria-describedby="tag-hint tag-error">
+          <datalist id="tag-options">
+            <option value="Class"></option>
+            <option value="Assignment"></option>
+            <option value="Groupwork"></option>
+            <option value="Study"></option>
+            <option value="Meeting"></option>
+            <option value="Sports"></option>
+            <option value="Entertainment"></option>
+          </datalist>
+          <p id="tag-hint" class="hint">Letters, spaces and hyphens. Choose from the list or type your own.</p>
+          <p id="tag-error" class="error"></p>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" id="save-btn" class="btn btn--primary">Save task</button>
+          <button type="button" id="cancel-edit" class="btn" hidden>Cancel edit</button>
+        </div>
+        <p id="form-status" class="status" role="status"></p>
+      </form>
+    </section>
+
+    <section id="settings" class="panel panel--full" aria-labelledby="settings-heading">
+      <h2 id="settings-heading">Settings</h2>
+      <div class="settings-grid">
+
+        <form id="settings-form" class="settings-group" novalidate>
+          <h3>Display and weekly cap</h3>
+          <fieldset>
+            <legend>Show durations in</legend>
+            <div class="radio">
+              <input id="unit-minutes" type="radio" name="unit" value="minutes" checked>
+              <label for="unit-minutes">Minutes</label>
+            </div>
+            <div class="radio">
+              <input id="unit-hours" type="radio" name="unit" value="hours">
+              <label for="unit-hours">Hours</label>
+            </div>
+          </fieldset>
+          <div class="field">
+            <label for="cap-input">Weekly cap (hours)</label>
+            <input id="cap-input" type="text" inputmode="numeric" autocomplete="off" aria-describedby="cap-hint cap-error">
+            <p id="cap-hint" class="hint">Whole hours, at least 1. Counts tasks due from Monday to Sunday.</p>
+            <p id="cap-error" class="error"></p>
+          </div>
+          <button type="submit" class="btn btn--primary">Save settings</button>
+        </form>
+
+        <div class="settings-group">
+          <h3>Tags</h3>
+          <div class="field">
+            <label for="new-tag">New tag</label>
+            <div class="tag-row">
+              <input id="new-tag" type="text" autocomplete="off" aria-describedby="new-tag-error">
+              <button type="button" id="add-tag" class="btn">Add tag</button>
+            </div>
+            <p id="new-tag-error" class="error"></p>
+          </div>
+          <ul id="tag-manager" class="tag-list" aria-label="Your tags"></ul>
+        </div>
+
+        <div class="settings-group">
+          <h3>Your data</h3>
+          <div class="data-actions">
+            <button type="button" id="export-btn" class="btn">Export tasks as JSON</button>
+            <div class="field">
+              <label for="import-file">Import tasks from a JSON file</label>
+              <input id="import-file" type="file" accept=".json,application/json">
+            </div>
+            <button type="button" id="clear-btn" class="btn btn--danger">Delete all tasks</button>
+          </div>
+        </div>
+
+      </div>
+      <p id="settings-status" class="status" role="status"></p>
+    </section>
+
+    <section id="about" class="panel panel--full" aria-labelledby="about-heading">
+      <h2 id="about-heading">About</h2>
+      <p>
+        Campus Life Planner helps students plan classes, assignments, study time, meetings,
+        sports and entertainment in one place. It shows what is due, how long each task takes
+        and how full your week is. Everything is saved in your browser; nothing is sent to a server.
+      </p>
+      <h3>Contact</h3>
+      <ul class="contact-list">
+        <li>GitHub: <a href="https://github.com/Olga-Igabe">github.com/Olga-Igabe</a></li>
+        <li>Email: <a href="mailto:o.igabe@alustudent.com">o.igabe@alustudent.com</a></li>
+      </ul>
+    </section>
+
+  </main>
+
+  <footer class="site-footer">
+    <p>Campus Life Planner · Built by Olga Igabe · African Leadership University, 2026</p>
+  </footer>
+</body>
+</html>
